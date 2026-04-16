@@ -1,0 +1,408 @@
+<%- include('partials/_header')%>
+
+<style>
+    /* Fondo con imagen y filtro visual */
+    body {
+      position: relative;
+      min-height: 100vh;
+      color: #111;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      background: url('/images/imagen-fondo.jpg') center center / cover no-repeat;
+      opacity: 0.35;
+      filter: blur(2px) brightness(0.8);
+    }
+    th, td {
+      border: none !important;
+    }
+    .tienda-card {
+        width: 22%;
+        margin: 1.5%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .tienda-card img {
+        max-width: 100%;
+        max-height: 100px;
+        margin-bottom: 10px;
+    }
+    .tienda-card p {
+        margin: 0;
+    }
+    .tiendas-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+    .selected {
+        border: 2px solid #007bff;
+        background-color: #e9f5ff;
+        transform: scale(1.02);
+    }
+    .btn-lg-custom {
+        padding: 0.5rem 1.5rem;
+        font-size: 1.1rem;
+    }
+    .gap-4 {
+        gap: 1.5rem !important;
+    }
+    .alert-danger {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        color: #dc3545;
+    }
+    .form-check-input:invalid ~ .form-check-label {
+        color: #dc3545;
+    }
+    .was-validated .form-check-input:invalid ~ .form-check-label {
+        color: #212529;
+    }
+</style>
+
+<div class="container mt-4">
+    <!-- Sección de listado de tiendas -->
+    <% if (section === 'tiendas') { %>
+        <h1 class="text-center mb-4">Tiendas</h1>
+        <div class="tiendas-container">
+            <% tiendas.forEach(function(tienda) { %>
+                <!-- Tarjeta clicable para cada tienda -->
+                <div class="tienda-card" 
+                     data-id="<%= tienda._id %>" 
+                     data-nombre="<%= tienda.nombre %>"
+                     data-imagen="<%= tienda.imagen %>">
+                    <% if (tienda.imagen) { %>
+                        <img src="<%= tienda.imagen %>" alt="<%= tienda.nombre %>">
+                    <% } %>
+                    <p><%= tienda.nombre %></p>
+                </div>
+            <% }); %>
+        </div>
+        <!-- Botones para añadir, modificar o eliminar tienda -->
+        <div class="mt-4 d-flex justify-content-center gap-4">
+            <button class="btn btn-dark px-4" data-toggle="modal" data-target="#addTiendaModal">Añadir Tienda</button>
+            <button class="btn btn-dark px-4" id="modificarTienda" disabled data-toggle="modal" data-target="#modifyTiendaModal">Modificar Tienda</button>
+            <button class="btn btn-dark px-4" id="eliminarTienda" disabled>Eliminar Tienda</button>
+        </div>
+    <!-- Sección de gestión de usuarios -->
+    <% } else if (section === 'usuarios') { %>
+        <h1 class="text-center mb-4">Gestión de Usuarios</h1>
+        
+        <% if (typeof error !== 'undefined' && error) { %>
+            <!-- Muestra mensaje de error si existe -->
+            <div class="alert alert-danger text-center mb-4">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                <%= error %>
+            </div>
+        <% } %>
+
+        <!-- Tabla de usuarios -->
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Rol(es)</th>
+                    <th>Tienda Asignada</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% usuarios.forEach(function(usuario) { %>
+                    <tr>
+                        <td><%= usuario.email %></td>
+                        <td>
+                            <% if (usuario.rol) { %>
+                                <%= usuario.rol.split(',').map(r => r.trim()).join(', ') %>
+                            <% } else { %>
+                                Sin rol asignado
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (usuario.tiendaId) { %>
+                                <%= usuario.tiendaId.nombre %>
+                            <% } else { %>
+                                -
+                            <% } %>
+                        </td>
+                        <td class="d-flex gap-3 align-items-center">
+                            <!-- Botón para abrir el modal de roles -->
+                            <button
+                                onclick="abrirModalRoles('<%= usuario._id %>', '<%= usuario.rol %>', '<%= usuario.tiendaId ? usuario.tiendaId._id : "" %>')"
+                                class="btn btn-primary btn-lg-custom">
+                                <i class="fas fa-edit mr-2"></i>Modificar Roles
+                            </button>
+                            <!-- Botón para eliminar usuario -->
+                            <button
+                                onclick="eliminarUsuario('<%= usuario._id %>')"
+                                class="btn btn-danger btn-lg-custom">
+                                <i class="fas fa-trash mr-2"></i>Eliminar Usuario
+                            </button>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    <% } %>
+</div>
+
+<!-- Modal para añadir tienda -->
+<div class="modal fade" id="addTiendaModal" tabindex="-1" role="dialog" aria-labelledby="addTiendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTiendaModalLabel">Añadir Nueva Tienda</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario para añadir tienda -->
+                <form id="addTiendaForm" action="/propietario/agregar-tienda" method="POST" enctype="multipart/form-data" novalidate>
+                    <div class="form-group">
+                        <label for="nombreTienda">Nombre de la Tienda</label>
+                        <input type="text" class="form-control" id="nombreTienda" name="nombre" required>
+                        <div class="invalid-feedback">Por favor, ingresa un nombre para la tienda.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="imagenTienda">Imagen de la Tienda</label>
+                        <input type="file" class="form-control-file" id="imagenTienda" name="imagen" required>
+                        <div class="invalid-feedback">Por favor, selecciona una imagen para la tienda.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Añadir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para modificar tienda -->
+<div class="modal fade" id="modifyTiendaModal" tabindex="-1" role="dialog" aria-labelledby="modifyTiendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modifyTiendaModalLabel">Modificar Tienda</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario para modificar tienda -->
+                <form id="modifyTiendaForm" action="/propietario/modificar-tienda" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" id="tiendaId" name="id">
+                    <div class="form-group">
+                        <label for="modifyNombreTienda">Nuevo Nombre</label>
+                        <input type="text" class="form-control" id="modifyNombreTienda" name="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modifyImagenTienda">Nueva Imagen</label>
+                        <input type="file" class="form-control-file" id="modifyImagenTienda" name="imagen">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Modificar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para actualizar roles de usuario -->
+<div class="modal fade" id="modalRoles" tabindex="-1" role="dialog" aria-labelledby="modalRolesLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRolesLabel">Actualizar Roles</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario para actualizar roles -->
+                <form id="formRoles" action="/propietario/actualizar-rol" method="POST" novalidate>
+                    <input type="hidden" id="userId" name="userId">
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rolCliente" name="roles" value="cliente">
+                            <label class="form-check-label" for="rolCliente">Cliente</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rolGerente" name="roles" value="gerente">
+                            <label class="form-check-label" for="rolGerente">Gerente</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rolPropietario" name="roles" value="propietario">
+                            <label class="form-check-label" for="rolPropietario">Propietario</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Selector de tienda (solo visible si se selecciona gerente) -->
+                    <div class="form-group mt-3" id="tiendaSelectorGroup" style="display: none;">
+                        <label for="tiendaSelect" class="form-label"><strong>Tienda asignada:</strong></label>
+                        <select class="form-control" id="tiendaSelect" name="tiendaId">
+                            <option value="">-- Selecciona una tienda --</option>
+                            <% tiendas.forEach(function(tienda) { %>
+                                <option value="<%= tienda._id %>"><%= tienda.nombre %></option>
+                            <% }); %>
+                        </select>
+                        <small class="form-text text-muted">Un gerente debe tener exactamente una tienda asignada.</small>
+                    </div>
+                    
+                    <div id="rolesErrorContainer"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- Selección de tienda y botones de modificar/eliminar ---
+document.addEventListener('DOMContentLoaded', () => {
+    const tiendaCards = document.querySelectorAll('.tienda-card');
+    const modificarBtn = document.getElementById('modificarTienda');
+    const eliminarBtn = document.getElementById('eliminarTienda');
+    let tiendaSeleccionada = null;
+
+    // Permite seleccionar una tienda y habilita los botones correspondientes
+    tiendaCards.forEach(card => {
+        card.addEventListener('click', () => {
+            tiendaCards.forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            tiendaSeleccionada = {
+                id: card.dataset.id,
+                nombre: card.dataset.nombre,
+                imagen: card.dataset.imagen
+            };
+            modificarBtn.disabled = false;
+            eliminarBtn.disabled = false;
+        });
+    });
+
+    // Al pulsar modificar, rellena el modal con los datos de la tienda seleccionada
+    modificarBtn.addEventListener('click', () => {
+        if (tiendaSeleccionada) {
+            document.getElementById('tiendaId').value = tiendaSeleccionada.id;
+            document.getElementById('modifyNombreTienda').value = tiendaSeleccionada.nombre;
+        }
+    });
+
+    // Al pulsar eliminar, pide confirmación y redirige a la ruta de eliminación
+    eliminarBtn.addEventListener('click', () => {
+        if (tiendaSeleccionada && confirm('¿Eliminar esta tienda?')) {
+            window.location.href = `/propietario/eliminar-tienda/${tiendaSeleccionada.id}`;
+        }
+    });
+});
+
+// --- Gestión de roles de usuario ---
+function abrirModalRoles(userId, rolActual, tiendaActualId) {
+    document.getElementById('userId').value = userId;
+    const formRoles = document.getElementById('formRoles');
+    formRoles.classList.remove('was-validated');
+
+    // Desmarca todos los checkboxes
+    document.querySelectorAll('#formRoles input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = false;
+        checkbox.parentElement.classList.remove('is-invalid', 'is-valid');
+    });
+
+    document.getElementById('rolesErrorContainer').innerHTML = '';
+
+    // Marca los roles actuales del usuario
+    if (rolActual) {
+        const roles = rolActual.split(',').map(r => r.trim());
+        roles.forEach(rol => {
+            const checkbox = document.querySelector(`#formRoles input[value="${rol}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+    }
+
+    // Actualiza la visibilidad del selector de tienda
+    actualizarSelectorTienda();
+    
+    // Si hay tienda asignada, selecciónala
+    if (tiendaActualId) {
+        document.getElementById('tiendaSelect').value = tiendaActualId;
+    }
+
+    // Mostrar el modal de roles usando Bootstrap 5 sin jQuery
+    var modal = document.getElementById('modalRoles');
+    var bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+// Función para mostrar/ocultar el selector de tienda según si gerente está seleccionado
+function actualizarSelectorTienda() {
+    const rolGerente = document.getElementById('rolGerente');
+    const tiendaSelector = document.getElementById('tiendaSelectorGroup');
+    
+    if (rolGerente && rolGerente.checked) {
+        tiendaSelector.style.display = 'block';
+    } else {
+        tiendaSelector.style.display = 'none';
+    }
+}
+
+// Event listener para el checkbox de gerente
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'rolGerente') {
+        actualizarSelectorTienda();
+    }
+});
+
+// Validación de roles: al menos uno debe estar seleccionado
+document.getElementById('formRoles').addEventListener('submit', function(e) {
+    const checkboxes = document.querySelectorAll('#formRoles input[type="checkbox"]:checked');
+    const rolGerente = document.getElementById('rolGerente');
+    const tiendaSelect = document.getElementById('tiendaSelect');
+
+    if (checkboxes.length === 0) {
+        e.preventDefault();
+        this.classList.add('was-validated');
+        document.querySelectorAll('#formRoles input[type="checkbox"]').forEach(checkbox => {
+            checkbox.parentElement.classList.add('is-invalid');
+        });
+        document.getElementById('rolesErrorContainer').innerHTML = `
+            <div class="alert alert-danger mt-3">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                Debes seleccionar al menos un rol
+            </div>`;
+        return;
+    }
+    
+    // Validación: si es gerente, debe tener tienda asignada
+    if (rolGerente && rolGerente.checked && !tiendaSelect.value) {
+        e.preventDefault();
+        this.classList.add('was-validated');
+        tiendaSelect.classList.add('is-invalid');
+        document.getElementById('rolesErrorContainer').innerHTML = `
+            <div class="alert alert-danger mt-3">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                Debes asignar una tienda al gerente
+            </div>`;
+        return;
+    }
+});
+
+// Eliminar usuario con confirmación
+function eliminarUsuario(userId) {
+    if (confirm('¿Eliminar este usuario?')) {
+        window.location.href = `/propietario/eliminar-usuario/${userId}`;
+    }
+}
+</script>
+
+<%- include('partials/_footer') %>

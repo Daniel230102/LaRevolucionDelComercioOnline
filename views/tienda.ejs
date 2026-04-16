@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Productos</title>
+  <!-- Bootstrap CSS (enlace CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome para iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    /* Estilos generales y de fondo */
+    body {
+      position: relative;
+      min-height: 100vh;
+      color: #111;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      background: url('/images/imagen-fondo.jpg') center center / cover no-repeat;
+      opacity: 0.35;
+      filter: blur(2px) brightness(0.8);
+    }
+    .volver-btn { 
+      position: fixed; 
+      top: 30px; 
+      left: 30px; 
+      background: none; 
+      border: none; 
+      font-size: 2rem; 
+      color: black; 
+      cursor: pointer; 
+      z-index: 1051; 
+    }
+    .tienda-header { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      margin: 70px 0 30px 0; 
+    }
+    .tienda-header img {
+      width: 400px;
+      height: 110px;
+      object-fit: contain;
+      object-position: center center;
+      display: block;
+      background: #fff;
+      border-radius: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .tienda-nombre {
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .busqueda-container {
+      position: fixed;
+      top: 30px;
+      right: 110px;
+      display: flex;
+      align-items: flex-end;
+      gap: 0.5rem;
+      z-index: 1002;
+      height: 40px;
+    }
+    .busqueda-input {
+      padding: 6px 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 200px;
+      height: 36px;
+      box-sizing: border-box;
+    }
+    .btn-buscar {
+      background: none;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      color: #333;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 4px;
+      height: 36px;
+      line-height: 1;
+    }
+    .btn-buscar:hover, 
+    .btn-buscar:focus { color: #007bff; 
+      outline: none; 
+    }
+    .tooltip-text { 
+      visibility: hidden; 
+      width: 220px; 
+      background-color: #333; 
+      color: #fff; 
+      text-align: center; 
+      border-radius: 6px; 
+      padding: 6px; 
+      position: absolute; 
+      z-index: 1003; 
+      top: 125%; 
+      left: 50%; 
+      margin-left: -110px; 
+      opacity: 0; 
+      transition: opacity 0.3s; 
+      font-size: 0.85rem; 
+      pointer-events: none; 
+    }
+    .btn-buscar:hover 
+    
+    .tooltip-text, 
+    .btn-buscar:focus 
+    
+    .tooltip-text { 
+      visibility: visible; 
+      opacity: 1; 
+      pointer-events: auto; 
+    }
+    .productos-container { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 1.5rem; 
+      justify-content: center; 
+      padding: 0 20px 40px 20px; 
+      margin-top: 80px; 
+    }
+    .producto-card { 
+      flex: 0 0 calc(25% - 1.5rem); 
+      max-width: 260px; 
+      box-sizing: border-box; 
+      border: 1px solid #ddd; 
+      border-radius: 6px; 
+      padding: 10px; 
+      background-color: #fff; 
+      transition: box-shadow 0.3s ease; 
+      cursor: pointer; 
+      margin-bottom: 30px; 
+      text-align: center; 
+    }
+    .producto-card:hover { 
+      box-shadow: 0 0 10px rgba(0,0,0,0.15); 
+    }
+    .producto-card img { 
+      max-width: 100%; 
+      height: auto; 
+      display: block; 
+      margin: 0 auto 10px auto; 
+    }
+    .producto-nombre { 
+      font-weight: bold; 
+      margin-top: 10px; 
+      margin-bottom: 6px; 
+    }
+    .producto-descripcion { 
+      font-size: 0.98rem; 
+      color: #555; 
+      margin-bottom: 6px; 
+    }
+    .producto-precio { 
+      font-weight: normal; 
+      font-size: 0.95rem; 
+      color: #333; 
+      margin-bottom: 10px; 
+    }
+    .d-flex { 
+      display: flex; 
+    }
+    .justify-content-center { 
+      justify-content: center; 
+    }
+    .align-items-center { 
+      align-items: center; 
+    }
+    .carrito-panel { 
+      position: fixed; 
+      top: 30px; 
+      right: 30px; 
+      width: 60px; 
+      height: 40px; 
+      background: white; 
+      border-radius: 20px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
+      display: flex; 
+      align-items: flex-end; 
+      justify-content: center; 
+      cursor: pointer; 
+      z-index: 1001; 
+      padding-bottom: 4px; 
+    }
+    .carrito-panel 
+    
+    .fa-shopping-cart { 
+      font-size: 28px; 
+      color: #333; 
+      line-height: 1; 
+      position: relative; 
+      bottom: 0; 
+    }
+    .carrito-badge { 
+      position: absolute; 
+      top: -6px; 
+      right: -6px; 
+      background: red; color: white; 
+      font-size: 12px; 
+      width: 18px; 
+      height: 18px; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: bold; 
+    }
+    .mensaje-no-existe { 
+      text-align: center; 
+      font-size: 1.2rem; 
+      color: #666; 
+      margin-top: 60px; 
+      width: 100%; 
+    }
+    .mensaje-vacio-container { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 200px; 
+      width: 100%; 
+    }
+    .mensaje-vacio { 
+      font-size: 1.3rem; 
+      color: #666; 
+      text-align: center; 
+    }
+    .btn-secondary, 
+    .btn-primary { 
+      min-width: 36px; 
+    }
+    .input-cantidad { 
+      width: 50px; 
+      text-align: center; 
+      margin: 0 10px; 
+      border-radius: 4px; 
+      border: 1px solid #ccc; 
+    }
+  </style>
+</head>
+<body>
+  <!-- Botón para volver atrás en el historial -->
+  <button class="volver-btn" onclick="window.history.back()" aria-label="Volver atrás">&#8592;</button>
+
+  <!-- Cabecera de la tienda con imagen -->
+  <div class="tienda-header">
+    <% if (tienda.imagen) { %>
+      <img src="<%= tienda.imagen %>" alt="Imagen de la tienda">
+    <% } %>
+  </div>
+
+  <!-- Mensaje de error de stock (si existe) -->
+  <% if (typeof errorStock !== 'undefined' && errorStock) { %>
+    <div class="alert alert-danger text-center"><%= errorStock %></div>
+  <% } %>
+
+  <!-- Buscador de productos -->
+  <div class="busqueda-container">
+    <button id="btnBuscar" class="btn-buscar" aria-label="Buscar productos" tabindex="0">
+      <i class="fa fa-search"></i>
+      <span class="tooltip-text">Si pulsas aquí sin escribir nada, vuelven a salir todos los productos de la tienda</span>
+    </button>
+    <input type="text" id="inputBusqueda" class="busqueda-input" placeholder="Buscar producto..." aria-label="Buscar producto">
+  </div>
+
+  <!-- Si no hay productos, muestra un mensaje -->
+  <% if (!productos || productos.length === 0) { %>
+    <div class="mensaje-vacio-container">
+      <p class="mensaje-vacio">No hay productos en esta tienda.</p>
+    </div>
+  <% } else { %>
+    <!-- Contenedor de los productos -->
+    <div class="productos-container" id="productosContainer">
+      <% productos.forEach(function(producto) { %>
+        <!-- Tarjeta de cada producto -->
+        <div class="producto-card"
+          data-nombre="<%= producto.nombre.toLowerCase() %>"
+          data-id="<%= producto._id %>"
+          data-descripcion="<%= producto.descripcion %>"
+          data-precio="<%= producto.precio.toFixed(2) %>"
+          data-imagen="<%= producto.imagen %>">
+          <img src="<%= producto.imagen %>" alt="<%= producto.nombre %>">
+          <div class="producto-nombre"><%= producto.nombre %></div>
+          <div class="producto-descripcion"><%= producto.descripcion ? producto.descripcion : 'Sin descripción' %></div>
+          <div class="producto-precio">Precio: <%= producto.precio.toFixed(2) %> €</div>
+          <!-- Selector de cantidad -->
+          <div class="d-flex justify-content-center align-items-center mb-2 mt-2">
+            <button type="button" class="btn btn-secondary btn-cantidad-menos">-</button>
+            <input type="text" class="input-cantidad" value="1" readonly>
+            <button type="button" class="btn btn-secondary btn-cantidad-mas">+</button>
+          </div>
+          <!-- Botón para añadir al carrito -->
+          <button type="button" class="btn btn-primary btn-agregar-carrito" style="display: block; margin: 0 auto;">Añadir al carrito</button>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <!-- Mensaje si la búsqueda no encuentra nada -->
+  <div id="mensajeNoExiste" class="mensaje-no-existe" style="display:none;">
+    Ese producto no existe
+  </div>
+
+  <!-- Panel flotante del carrito -->
+  <div class="carrito-panel" title="Ver carrito" onclick="window.location.href='/cliente/carrito'">
+    <i class="fa fa-shopping-cart"></i>
+    <div class="carrito-badge" id="carrito-cantidad"><%= carrito.length %></div>
+  </div>
+
+  <!-- Bootstrap JS (enlace CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // --- Lógica para cada tarjeta de producto ---
+      document.querySelectorAll('.producto-card').forEach(function(card) {
+        const btnMenos = card.querySelector('.btn-cantidad-menos');
+        const btnMas = card.querySelector('.btn-cantidad-mas');
+        const inputCantidad = card.querySelector('.input-cantidad');
+        const btnAgregar = card.querySelector('.btn-agregar-carrito');
+        let cantidad = 1;
+
+        // Disminuir cantidad
+        btnMenos.addEventListener('click', function() {
+          if (cantidad > 1) {
+            cantidad--;
+            inputCantidad.value = cantidad;
+          }
+        });
+
+        // Aumentar cantidad
+        btnMas.addEventListener('click', function() {
+          cantidad++;
+          inputCantidad.value = cantidad;
+        });
+
+        // Añadir al carrito
+        btnAgregar.addEventListener('click', function() {
+          const productoId = card.getAttribute('data-id');
+          const tiendaId = window.location.pathname.split('/').pop();
+          fetch('/cliente/carrito/agregar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ productoId: productoId, cantidad: cantidad, tiendaId: tiendaId })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              // Actualiza el contador del carrito
+              document.getElementById('carrito-cantidad').textContent = data.carrito.length;
+            } else {
+              alert(data.error || 'Error al añadir al carrito');
+            }
+          });
+        });
+      });
+
+      // --- Lógica para la búsqueda de productos ---
+      var inputBusqueda = document.getElementById('inputBusqueda');
+      var btnBuscar = document.getElementById('btnBuscar');
+      var productosContainer = document.getElementById('productosContainer');
+      var mensajeNoExiste = document.getElementById('mensajeNoExiste');
+      var productos = productosContainer ? productosContainer.querySelectorAll('.producto-card') : [];
+
+      // Filtrar productos
+      function filtrarProductos() {
+        var textoBusqueda = inputBusqueda.value.trim().toLowerCase();
+        let encontrados = 0;
+        productos.forEach(function(card) {
+          var nombreProducto = card.getAttribute('data-nombre');
+          if (textoBusqueda === '' || nombreProducto.includes(textoBusqueda)) {
+            card.style.display = '';
+            encontrados++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+        // Muestra mensaje si no encuentra nada
+        if (encontrados === 0) {
+          mensajeNoExiste.style.display = '';
+        } else {
+          mensajeNoExiste.style.display = 'none';
+        }
+      }
+
+      // Al hacer clic en el botón de búsqueda
+      btnBuscar.addEventListener('click', filtrarProductos);
+      // Al pulsar Enter en el campo de búsqueda
+      inputBusqueda.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          filtrarProductos();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (NUNCA subir al repositorio)
+.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Archivos temporales
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Uploads locales (si usas almacenamiento en la nube)
+public/uploads/
+
+# Archivos CSV subidos
+files/trabajadores/
+
+# Documentación generada
+docs/

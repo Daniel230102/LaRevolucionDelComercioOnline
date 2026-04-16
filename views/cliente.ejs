@@ -1,0 +1,97 @@
+<%- include('partials/_header') %>
+
+<% if (typeof gracias !== 'undefined' && gracias) { %>
+  <!-- Mensaje de agradecimiento tras una compra exitosa -->
+  <div id="mensaje-gracias" style="
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #28a745;
+    color: white;
+    padding: 18px 32px;
+    border-radius: 8px;
+    font-size: 1.4rem;
+    z-index: 2000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    text-align: center;
+  ">¡Gracias por su compra!</div>
+  <script>
+    // Oculta el mensaje de agradecimiento después de 2 segundos
+    setTimeout(function() {
+      var el = document.getElementById('mensaje-gracias');
+      if (el) el.style.display = 'none';
+    }, 2000);
+  </script>
+<% } %>
+
+<style>
+  /* Fondo con imagen y filtro visual */
+  body {
+      position: relative;
+      min-height: 100vh;
+      color: #111;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      background: url('/images/imagen-fondo.jpg') center center / cover no-repeat;
+      opacity: 0.35;
+      filter: blur(2px) brightness(0.8);
+    }
+  .tienda-card {
+    width: 22%;
+    margin: 1.5%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .tienda-card img {
+    max-width: 100%;
+    max-height: 100px;
+    margin-bottom: 10px;
+  }
+  .tienda-card p {
+    margin: 0;
+  }
+  .tiendas-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+</style>
+
+<div class="container mt-4">
+  <!-- Contenedor de todas las tiendas -->
+  <div class="tiendas-container">
+    <% tiendas.forEach(function(tienda) { %>
+      <!-- Tarjeta clicable de cada tienda -->
+      <div class="tienda-card" onclick="verProductos('<%= tienda._id %>')">
+        <% if (tienda.imagen) { %>
+          <!-- Imagen de la tienda si existe -->
+          <img src="<%= tienda.imagen %>" alt="<%= tienda.nombre %>">
+        <% } %>
+        <!-- Nombre de la tienda -->
+        <p><%= tienda.nombre %></p>
+      </div>
+    <% }); %>
+  </div>
+</div>
+
+<!-- Script para navegar a la vista de productos de la tienda seleccionada -->
+<script>
+  function verProductos(tiendaId) {
+    window.location.href = '/cliente/tienda/' + tiendaId;
+  }
+</script>
+
+<%- include('partials/_footer') %>

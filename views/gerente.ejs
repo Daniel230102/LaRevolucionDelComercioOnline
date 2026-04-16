@@ -1,0 +1,763 @@
+<% var sinHeader = typeof sinHeader !== 'undefined' ? sinHeader : false; %>
+<% if (!sinHeader) { %>
+  <%- include('partials/_header')%>
+<% } %>
+
+<!-- Mensaje de información para la cantidad de stock baja -->
+<% if (typeof stocksBajos !== 'undefined' && stocksBajos && stocksBajos.length > 0) { %>
+  <div id="alertaStockBajo" style="
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffc107;
+    color: #333;
+    padding: 20px 35px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    z-index: 2000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    text-align: center;
+    max-width: 600px;
+  ">
+    <b>⚠️ ¡Atención! Stock bajo en los siguientes productos:</b>
+    <ul style="margin-top: 10px; text-align: left; list-style: none; padding-left: 0;">
+      <% stocksBajos.forEach(function(stock) { %>
+        <li style="margin: 5px 0;">
+          <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+          <strong><%= stock.producto.nombre %></strong>: 
+          <span style="color: #dc3545; font-weight: bold;"><%= stock.cantidad %> unidades restantes</span>
+        </li>
+      <% }); %>
+    </ul>
+  </div>
+  <!-- Script para ocultar la alerta a los 8 segundos -->
+  <script>
+    setTimeout(function() {
+      var el = document.getElementById('alertaStockBajo');
+      if (el) el.style.display = 'none';
+    }, 8000);
+  </script>
+<% } %>
+
+<style>
+  body {
+    position: relative;
+    min-height: 100vh;
+    color: #111;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1;
+    background: url('/images/imagen-fondo.jpg') center center / cover no-repeat;
+    opacity: 0.35;
+    filter: blur(2px) brightness(0.8);
+  }
+  th, td {
+      border: none !important;
+  }
+  .tienda-card { 
+    width: 22%; 
+    margin: 1.5%; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    background-color: #f8f9fa; 
+    border: 1px solid #dee2e6; 
+    border-radius: 5px; 
+    padding: 10px; 
+    text-align: center; 
+    cursor: pointer; 
+  }
+  .tienda-card img { 
+    max-width: 100%; 
+    max-height: 100px; 
+    margin-bottom: 10px; 
+  }
+  .tienda-card p { 
+    margin: 0; 
+  }
+  .tiendas-container { 
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+  }
+  .productos-container { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 1.5rem; 
+    justify-content: center; 
+  }
+  .producto-card { 
+    flex: 0 0 calc(25% - 1.5rem); 
+    max-width: 260px; 
+    box-sizing: border-box; 
+    border: 1px solid #ddd; 
+    border-radius: 6px; 
+    padding: 10px; 
+    background-color: #fff; 
+    transition: box-shadow 0.3s ease; 
+    cursor: pointer; 
+    margin-bottom: 30px; 
+  }
+  .producto-card:hover { 
+    box-shadow: 0 0 10px rgba(0,0,0,0.15); 
+  }
+  .producto-card img { 
+    max-width: 100%; 
+    height: auto; 
+    display: block; 
+    margin: 0 auto 10px auto; 
+  }
+  .producto-nombre { 
+    font-weight: bold; 
+    margin-bottom: 6px; 
+    text-align: center; 
+  }
+  .producto-precio { 
+    text-align: left; 
+    font-weight: normal; 
+    font-size: 0.95rem; 
+    color: #333; 
+  }
+  .producto-descripcion { 
+    font-size: 0.9rem; 
+    color: #555; 
+    margin-top: 6px; 
+    text-align: center; 
+    font-style: italic; 
+  }
+  .volver-btn { 
+    position: absolute; 
+    top: 30px; 
+    left: 30px; 
+    z-index: 10; 
+    background: none; 
+    border: none; 
+    font-size: 2rem; 
+    color: black; 
+    cursor: pointer; 
+  }
+  .tienda-header { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    margin: 40px 0 30px 0; 
+  }
+  .tienda-header img { 
+    max-width: 180px; 
+    max-height: 120px; 
+    border-radius: 10px; 
+    margin-bottom: 15px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+  }
+  .tienda-header 
+  
+  .tienda-nombre { 
+    font-size: 2rem; 
+    font-weight: bold; 
+    text-align: center; 
+  }
+  .csv-upload { 
+    width: 100%; 
+    margin-bottom: 1.5rem; 
+    background: none !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    padding: 0 !important; 
+  }
+  .csv-upload form { 
+    background: none !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    padding: 0 !important; 
+    margin: 0 !important; 
+    display: flex; 
+    align-items: flex-end; 
+    gap: 1rem; 
+  }
+  .csv-upload 
+  
+  .form-group { 
+    margin-bottom: 0; 
+  }
+  .csv-list { 
+    width: 100%; 
+    max-height: 300px; 
+    overflow-y: auto; 
+    padding: 0; 
+    background: none; 
+    border: none; 
+  }
+  table th, table td { 
+    vertical-align: middle !important; 
+  }
+  #modificarDescripcion { 
+    width: 100%; 
+    min-height: 80px; 
+    resize: vertical; 
+    margin-top: 6px; 
+  }
+  .horarios-table-container { 
+    margin-top: 2rem; 
+    margin-bottom: 2rem; 
+    background: #fff; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+    padding: 20px;
+  }
+  .horarios-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-bottom: 0; 
+  }
+  .horarios-table th, .horarios-table td { 
+    border: 1px solid #dee2e6; 
+    padding: 8px; 
+    text-align: center; 
+  }
+  .horarios-table th { 
+    background: #f7f8fa; 
+  }
+  .mensaje-vacio-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    width: 100%;
+  }
+  .mensaje-vacio {
+    font-size: 1.3rem;
+    color: #666;
+    text-align: center;
+  }
+</style>
+
+<div class="container mt-4">
+<!-- Sección listado de tiendas -->
+<% if (section === 'tiendas') { %>
+  <div class="tiendas-container">
+    <% if (typeof tiendas !== 'undefined' && tiendas.length > 0) { %>
+      <% tiendas.forEach(function(tienda) { %>
+        <div class="tienda-card" onclick="verProductos('<%= tienda._id %>')">
+          <% if (tienda.imagen) { %>
+            <img src="<%= tienda.imagen %>" alt="<%= tienda.nombre %>">
+          <% } %>
+          <p><%= tienda.nombre %></p>
+        </div>
+      <% }); %>
+    <% } else { %>
+      <div class="text-muted">No hay tiendas registradas.</div>
+    <% } %>
+  </div>
+
+<!-- Sección productos de una tienda -->
+<% } else if (section === 'tienda') { %>
+  <div class="tienda-header">
+    <% if (tienda && tienda.imagen) { %>
+      <img src="<%= tienda.imagen %>" alt="<%= tienda.nombre %>">
+    <% } %>
+  </div>
+  <% if (!productos || productos.length === 0) { %>
+    <div class="mensaje-vacio-container">
+      <p class="mensaje-vacio">No hay productos en esta tienda.</p>
+    </div>
+  <% } else { %>
+    <div class="productos-container">
+      <% productos.forEach(function(producto) { %>
+        <div class="producto-card">
+          <img src="<%= producto.imagen %>" alt="<%= producto.nombre %>">
+          <div class="producto-nombre"><%= producto.nombre %></div>
+          <div class="producto-descripcion"><%= producto.descripcion ? producto.descripcion : 'Sin descripción' %></div>
+          <div class="producto-precio">Precio: <%= producto.precio.toFixed(2) %> €</div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+
+<!-- Sección gestión de productos con el formulario y la tabla -->
+<% } else if (section === 'gestion-productos') { %>
+  <!-- Formulario para agregar producto -->
+    <form action="/gerente/agregar-producto" method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="nombre">Nombre del producto</label>
+        <input type="text" class="form-control" id="nombre" name="nombre" required>
+      </div>
+      <div class="form-group">
+        <label for="descripcion">Descripción</label>
+        <textarea class="form-control" id="descripcion" name="descripcion" rows="3" placeholder="Descripción del producto"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="precio">Precio</label>
+        <input type="number" class="form-control" id="precio" name="precio" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label for="imagen">Imagen</label>
+        <input type="file" class="form-control-file" id="imagen" name="imagen" required>
+      </div>
+      <div class="form-group">
+        <label for="tiendaId">Tienda</label>
+        <select class="form-control" id="tiendaId" name="tiendaId" required>
+          <% tiendas.forEach(tienda => { %>
+            <option value="<%= tienda._id %>"><%= tienda.nombre %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Agregar Producto</button>
+    </form>
+    <!-- Tabla de productos existentes -->
+    <h3 class="mt-4">Productos Existentes</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Precio</th>
+          <th>Tienda</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% productos.forEach(producto => { %>
+          <tr>
+            <td><%= producto.nombre %></td>
+            <td><%= producto.descripcion ? producto.descripcion : 'Sin descripción' %></td>
+            <td><%= producto.precio %>€</td>
+            <td><%= producto.tiendaId ? producto.tiendaId.nombre : 'N/A' %></td>
+            <td>
+              <button
+                class="btn btn-sm btn-warning"
+                data-id="<%= producto._id %>"
+                data-nombre="<%= producto.nombre %>"
+                data-precio="<%= producto.precio %>"
+                data-descripcion="<%= producto.descripcion ? producto.descripcion : '' %>"
+                onclick="abrirModalEditarProducto(this)">
+                Editar
+              </button>
+              <a href="/gerente/eliminar-producto/<%= producto._id %>" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar este producto?')">Eliminar</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+<!-- Sección de gestión de horarios con la subida de CSV, formulario de asignación, búsqueda y tabla -->
+<% } else if (section === 'gestion-horarios') { %>
+    <!-- Subida de archivo CSV de trabajadores -->
+    <div class="csv-upload">
+      <form id="formSubirCSV" action="/gerente/subir-trabajadores" method="POST" enctype="multipart/form-data" class="mb-4">
+        <div class="form-group">
+          <label for="archivoCSV">Subir archivo CSV de trabajadores</label>
+          <input type="file" name="archivoCSV" id="archivoCSV" accept=".csv" class="form-control-file" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Subir CSV</button>
+      </form>
+      <% if (errorCSV) { %>
+        <div class="alert alert-danger mt-2"><%= errorCSV %></div>
+      <% } %>
+      <% if (errorHorario) { %>
+        <div class="alert alert-danger mt-2"><%= errorHorario %></div>
+      <% } %>
+    </div>
+
+  <!-- Formulario para asignar horario a un trabajador -->
+    <form id="formAsignarHorario" action="/gerente/agregar-horario" method="POST" style="margin-top: 20px;">
+      <!-- Select de trabajador, tienda, día, semana, mes, hora inicio y fin -->
+      <div class="form-group">
+      <label for="trabajadorSelect">Selecciona un trabajador</label>
+      <select id="trabajadorSelect" name="trabajador" class="form-control" required>
+        <option value="">Selecciona trabajador</option>
+        <% trabajadores.forEach(trabajador => { %>
+          <option value="<%= trabajador._id %>"><%= trabajador.nombre %> <%= trabajador.apellidos %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="tiendaHorarioId">Tienda</label>
+      <select id="tiendaHorarioId" name="tiendaId" class="form-control" required>
+        <option value="">Selecciona tienda</option>
+        <% tiendas.forEach(tienda => { %>
+          <option value="<%= tienda._id %>" <%= tiendaSeleccionada == tienda._id ? 'selected' : '' %>><%= tienda.nombre %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="dia">Día:</label>
+      <select id="dia" name="dia" class="form-control" required>
+        <option value="">Selecciona día</option>
+        <option value="Lunes">Lunes</option>
+        <option value="Martes">Martes</option>
+        <option value="Miércoles">Miércoles</option>
+        <option value="Jueves">Jueves</option>
+        <option value="Viernes">Viernes</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="semana">Semana:</label>
+      <select id="semana" name="semana" class="form-control" required>
+        <option value="">Selecciona semana</option>
+        <option value="1" <%= semanaSeleccionada == 1 ? 'selected' : '' %>>Semana 1</option>
+        <option value="2" <%= semanaSeleccionada == 2 ? 'selected' : '' %>>Semana 2</option>
+        <option value="3" <%= semanaSeleccionada == 3 ? 'selected' : '' %>>Semana 3</option>
+        <option value="4" <%= semanaSeleccionada == 4 ? 'selected' : '' %>>Semana 4</option>
+        <option value="5" <%= semanaSeleccionada == 5 ? 'selected' : '' %>>Semana 5</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="mes">Mes:</label>
+      <select id="mes" name="mes" class="form-control" required>
+        <option value="">Selecciona mes</option>
+        <% ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].forEach((mes, index) => { %>
+          <option value="<%= index + 1 %>" <%= mesSeleccionado == (index + 1) ? 'selected' : '' %>><%= mes %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="hora_inicio">Hora de inicio:</label>
+      <input type="time" id="hora_inicio" name="hora_inicio" class="form-control" min="08:00" max="17:00" required>
+    </div>
+
+    <div class="form-group">
+      <label for="hora_fin">Hora de fin:</label>
+      <input type="time" id="hora_fin" name="hora_fin" class="form-control" min="08:00" max="17:00" required>
+    </div>
+
+    <button type="submit" class="btn btn-success">Asignar Horario</button>
+  </form>
+
+  <hr>
+    <!-- Formulario para buscar horario de una tienda/semana/mes -->
+    <h5 class="mb-3">¿De cuál tienda quieres buscar el horario?</h5>
+    <form method="GET" action="/gerente/gestion-horarios" class="mb-4">
+      <!-- Selects para tienda, semana y mes -->
+      <div class="form-group">
+      <label for="buscarTienda">Tienda:</label>
+      <select id="buscarTienda" name="tienda" class="form-control" required>
+        <option value="">Selecciona tienda</option>
+        <% tiendas.forEach(tienda => { %>
+          <option value="<%= tienda._id %>" <%= tiendaSeleccionada == tienda._id ? 'selected' : '' %>><%= tienda.nombre %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="buscarSemana">Semana:</label>
+      <select id="buscarSemana" name="semana" class="form-control" required>
+        <option value="">Selecciona semana</option>
+        <% for(let i=1; i<=5; i++) { %>
+          <option value="<%= i %>" <%= semanaSeleccionada == i ? 'selected' : '' %>>Semana <%= i %></option>
+        <% } %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="buscarMes">Mes:</label>
+      <select id="buscarMes" name="mes" class="form-control" required>
+        <option value="">Selecciona mes</option>
+        <% ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].forEach((mes, index) => { %>
+          <option value="<%= index + 1 %>" <%= mesSeleccionado == (index + 1) ? 'selected' : '' %>><%= mes %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-info">Buscar</button>
+  </form>
+
+  <!-- Tabla de horarios semanales -->
+  <% if (horario && diasSemana && tiendaObj) { %>
+    <div class="horarios-table-container">
+      <h5 class="mb-3">Horario semanal de <%= tiendaObj.nombre %></h5>
+      <table class="horarios-table">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <% diasSemana.forEach(function(dia) { %>
+              <th><%= dia %></th>
+            <% }); %>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (let h = 8; h <= 16; h++) { %>
+            <tr>
+              <td><%= h %>:00 - <%= h+1 %>:00</td>
+              <% diasSemana.forEach(function(dia) { %>
+                <td>
+                  <% if (horario[h][dia]) { %>
+                    <%= horario[h][dia] %>
+                  <% } %>
+                </td>
+              <% }); %>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  <% } else if (typeof tiendaSeleccionada !== 'undefined' && tiendaSeleccionada && semanaSeleccionada && mesSeleccionado) { %>
+    <div class="alert alert-warning">No hay horarios para esa tienda</div>
+  <% } %>
+<% } %>
+
+<!-- Sección de gestión de stock -->
+<% if (section === 'gestion-stock') { %>
+  <div class="container mt-4">
+    <% if (mensajeStock) { %>
+      <div class="alert alert-info"><%= mensajeStock %></div>
+    <% } %>
+    <% if (stocksBajos && stocksBajos.length > 0) { %>
+      <div class="alert alert-warning">
+        <b>¡Atención!</b> Los siguientes productos tienen menos de 5 unidades de stock:
+        <ul>
+          <% stocksBajos.forEach(function(sb) { %>
+            <li><b><%= sb.producto.nombre %></b> en <b><%= sb.tienda.nombre %></b>: <%= sb.cantidad %> unidades</li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+    <h3>Gestión de Stock</h3>
+    <!-- Formulario para asignar stock a un producto -->
+    <form action="/gerente/gestion-stock" method="POST" class="mb-3">
+      <div class="form-group">
+        <label for="tienda">Selecciona tienda</label>
+        <select name="tienda" id="tienda" class="form-control" required>
+          <option value="">Selecciona tienda</option>
+          <% tiendas.forEach(function(t) { %>
+            <option value="<%= t._id %>"><%= t.nombre %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="producto">Selecciona producto</label>
+        <select name="producto" id="producto" class="form-control" required disabled>
+          <option value="">Selecciona producto</option>
+            <% productos.forEach(function(p) { %>
+          <option value="<%= p._id %>" data-tienda="<%= p.tiendaId %>"><%= p.nombre %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="cantidad">Cantidad de stock a añadir</label>
+        <input type="number" name="cantidad" id="cantidad" class="form-control" min="1" required>
+      </div>
+      <button type="submit" class="btn btn-success">Añadir stock</button>
+    </form>
+  </div>
+<% } %>
+
+<!-- Modales de descripción de productos y editar productos -->
+<div class="modal fade" id="modalDescripcionProducto" tabindex="-1" role="dialog" aria-labelledby="modalDescripcionLabel" aria-hidden="true" hidden>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalDescripcionLabel">Descripción del Producto</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="descripcionProductoContenido"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEditarProducto" tabindex="-1" role="dialog" aria-labelledby="modalEditarProductoLabel" aria-hidden="true" hidden>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="formEditarProducto" method="POST" action="/gerente/modificar-producto" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarProductoLabel">¿Qué quieres modificar?</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editarProductoId" name="id">
+          <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" id="modificarNombreCheckbox" name="modificarNombre">
+            <label class="form-check-label" for="modificarNombreCheckbox">Nombre del producto</label>
+            <input type="text" class="form-control mt-2" id="nuevoNombre" name="nombre" placeholder="Nuevo nombre" disabled>
+          </div>
+          <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" id="modificarDescripcionCheckbox" name="modificarDescripcion">
+            <label class="form-check-label" for="modificarDescripcionCheckbox">Descripción</label>
+            <textarea class="form-control mt-2" id="modificarDescripcion" name="descripcion" placeholder="Nueva descripción" disabled></textarea>
+          </div>
+          <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" id="modificarPrecioCheckbox" name="modificarPrecio">
+            <label class="form-check-label" for="modificarPrecioCheckbox">Precio</label>
+            <input type="number" step="0.01" pattern="^\d+(\.\d{1,2})?$" class="form-control mt-2" id="nuevoPrecio" name="precio" placeholder="Nuevo precio" disabled>
+          </div>
+          <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" id="modificarImagenCheckbox" name="modificarImagen">
+            <label class="form-check-label" for="modificarImagenCheckbox">Imagen</label>
+            <input type="file" class="form-control-file mt-2" id="nuevaImagen" name="imagen" disabled>
+          </div>
+          <div id="mensajeErrorEditar" class="alert alert-danger d-none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts para ir a una tienda concreta, para la descripción de productos y para editar productos -->
+<script>
+  function verProductos(tiendaId) {
+    window.location.href = '/gerente/tienda/' + tiendaId;
+  }
+
+  function abrirModalDescripcion(descripcion) {
+    var modal = document.getElementById('modalDescripcionProducto');
+    modal.removeAttribute('hidden');
+    var contenido = descripcion || 'Sin descripción disponible';
+    document.getElementById('descripcionProductoContenido').textContent = contenido;
+    var bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+  }
+
+  function abrirModalEditarProducto(btn) {
+  // Lee los datos del producto desde los atributos data-*
+  var id = btn.getAttribute('data-id');
+  var nombre = btn.getAttribute('data-nombre');
+  var precio = btn.getAttribute('data-precio');
+  var descripcion = btn.getAttribute('data-descripcion');
+
+  // Muestra el modal de edición
+  var modal = document.getElementById('modalEditarProducto');
+  modal.removeAttribute('hidden');
+  var bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+
+  // Rellena el ID del producto a editar
+  document.getElementById('editarProductoId').value = id;
+
+  // Desmarca todos los checkboxes de modificación
+  ['modificarNombreCheckbox', 'modificarDescripcionCheckbox', 'modificarPrecioCheckbox', 'modificarImagenCheckbox'].forEach(function(checkboxId) {
+    document.getElementById(checkboxId).checked = false;
+  });
+
+  // Limpia y deshabilita los campos de edición
+  ['nuevoNombre', 'modificarDescripcion', 'nuevoPrecio', 'nuevaImagen'].forEach(function(inputId) {
+    var el = document.getElementById(inputId);
+    if (el.tagName.toLowerCase() === 'textarea' || el.tagName.toLowerCase() === 'input') {
+      el.value = '';
+      el.disabled = true;
+    }
+  });
+
+  // Coloca los valores actuales como placeholders
+  document.getElementById('nuevoNombre').placeholder = nombre;
+  document.getElementById('modificarDescripcion').placeholder = descripcion;
+  document.getElementById('nuevoPrecio').placeholder = precio;
+
+  // Oculta cualquier mensaje de error anterior
+  var mensajeError = document.getElementById('mensajeErrorEditar');
+  mensajeError.classList.add('d-none');
+  mensajeError.innerText = '';
+}
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('modificarNombreCheckbox')?.addEventListener('change', function () {
+      document.getElementById('nuevoNombre').disabled = !this.checked;
+    });
+    document.getElementById('modificarDescripcionCheckbox')?.addEventListener('change', function () {
+      document.getElementById('modificarDescripcion').disabled = !this.checked;
+    });
+    document.getElementById('modificarPrecioCheckbox')?.addEventListener('change', function () {
+      document.getElementById('nuevoPrecio').disabled = !this.checked;
+    });
+    document.getElementById('modificarImagenCheckbox')?.addEventListener('change', function () {
+      document.getElementById('nuevaImagen').disabled = !this.checked;
+    });
+
+    document.getElementById('formEditarProducto')?.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var modificarNombre = document.getElementById('modificarNombreCheckbox').checked;
+      var modificarDescripcion = document.getElementById('modificarDescripcionCheckbox').checked;
+      var modificarPrecio = document.getElementById('modificarPrecioCheckbox').checked;
+      var modificarImagen = document.getElementById('modificarImagenCheckbox').checked;
+
+      var nuevoNombre = document.getElementById('nuevoNombre').value.trim();
+      var nuevaDescripcion = document.getElementById('modificarDescripcion').value.trim();
+      var nuevoPrecio = document.getElementById('nuevoPrecio').value.trim();
+      var nuevaImagen = document.getElementById('nuevaImagen').files.length;
+
+      var mensajeError = document.getElementById('mensajeErrorEditar');
+
+      if (!modificarNombre && !modificarDescripcion && !modificarPrecio && !modificarImagen) {
+        if (!confirm('No has seleccionado ninguna opción para modificar, ¿estás seguro?')) {
+          return;
+        } else {
+          var modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarProducto'));
+          modal.hide();
+          return;
+        }
+      }
+
+      if (modificarNombre && nuevoNombre === '') {
+        mensajeError.innerText = 'Por favor, ingresa el nuevo nombre del producto.';
+        mensajeError.classList.remove('d-none');
+        return;
+      }
+      if (modificarDescripcion && nuevaDescripcion === '') {
+        mensajeError.innerText = 'Por favor, ingresa la nueva descripción del producto.';
+        mensajeError.classList.remove('d-none');
+        return;
+      }
+      if (modificarPrecio && (nuevoPrecio === '' || isNaN(nuevoPrecio) || Number(nuevoPrecio) <= 0)) {
+        mensajeError.innerText = 'Por favor, ingresa un precio válido mayor que 0.';
+        mensajeError.classList.remove('d-none');
+        return;
+      }
+      if (modificarImagen && nuevaImagen === 0) {
+        mensajeError.innerText = 'Por favor, selecciona una imagen para el producto.';
+        mensajeError.classList.remove('d-none');
+        return;
+      }
+
+      mensajeError.classList.add('d-none');
+      mensajeError.innerText = '';
+      this.submit();
+    });
+  });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var tiendaSelect = document.getElementById('tienda');
+  var productoSelect = document.getElementById('producto');
+  var allOptions = Array.from(productoSelect.options).slice(1);
+
+  tiendaSelect.addEventListener('change', function () {
+    var tiendaId = this.value;
+    productoSelect.innerHTML = '<option value="">Selecciona producto</option>';
+    if (!tiendaId) {
+      productoSelect.disabled = true;
+      return;
+    }
+    allOptions.forEach(function(opt) {
+      if (opt.getAttribute('data-tienda') === tiendaId) {
+        productoSelect.appendChild(opt.cloneNode(true));
+      }
+    });
+    productoSelect.disabled = false;
+  });
+});
+</script>
+
+<% if (!sinHeader) { %>
+  <%- include('partials/_footer') %>
+<% } %>

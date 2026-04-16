@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La revolución del comercio online</title>
+    <!-- Enlace a Bootstrap para estilos rápidos y responsive -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <!-- Barra de navegación superior -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <!-- Nombre/marca de la aplicación -->
+            <span class="navbar-brand">La Revolución del Comercio Online</span>
+            <!-- Navegación principal a la izquierda -->
+            <div class="navbar-nav mr-auto">
+                <!-- Opciones para GERENTE -->
+                <% if (rol === 'gerente') { %>
+                    <a class="nav-item nav-link" href="/gerente">Tiendas</a>
+                    <a class="nav-item nav-link" href="/gerente/gestion-productos">Gestión de Productos</a>
+                    <a class="nav-item nav-link" href="/gerente/gestion-horarios">Gestión de Horarios</a>
+                    <a class="nav-item nav-link" href="/gerente/gestion-stock">Gestión de Stock</a>
+                <!-- Opciones para PROPIETARIO -->
+                <% } else if (rol === 'propietario') { %>
+                    <a class="nav-item nav-link" href="/propietario">Tiendas</a>
+                    <a class="nav-item nav-link" href="/propietario/gestion-usuarios">Gestión de Usuarios</a>
+                <% } %>
+            </div>
+            <!-- Navegación a la derecha: botón de cerrar sesión si hay un rol definido -->
+            <div class="navbar-nav ml-auto">
+                <% if (typeof rol !== 'undefined' && rol !== null) { %>
+                    <a class="nav-item nav-link" href="/cerrar-sesion">Cerrar Sesión</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+    <!-- Contenedor principal para el contenido de la página -->
+    <div class="container mt-4">

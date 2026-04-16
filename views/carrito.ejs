@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Carrito de Compras</title>
+  <!-- Bootstrap para estilos y componentes -->
+  <link rel="stylesheet" href="/path/to/bootstrap.css" />
+  <!-- FontAwesome para iconos (lupa, eliminar, etc.) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Leaflet para el mapa interactivo de direcciones -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    /* Fondo con imagen y efectos visuales */
+    body {
+      position: relative;
+      min-height: 100vh;
+      color: #111;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      background: url('/images/imagen-fondo.jpg') center center / cover no-repeat;
+      opacity: 0.35;
+      filter: blur(2px) brightness(0.8);
+    }
+    .volver-btn {
+      position: fixed;
+      top: 30px;
+      left: 30px;
+      background: none;
+      border: none;
+      font-size: 2rem;
+      color: black;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    .carrito-container {
+      max-width: 900px;
+      margin: 100px auto 60px;
+      padding: 0 20px;
+    }
+    .producto-card {
+      display: flex;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      padding: 15px;
+      align-items: center;
+      position: relative;
+    }
+    .producto-card img {
+      width: 120px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+    .producto-info {
+      flex-grow: 1;
+    }
+    .producto-nombre {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .producto-cantidad {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .precio-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .producto-precio {
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .precio-total {
+      font-size: 1.1rem;
+      color: #333;
+      font-weight: bold;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+    .btn-eliminar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: #cc0000;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    .btn-eliminar:hover {
+      color: #ff0000;
+    }
+    .btn-continuar {
+      display: block;
+      margin: 30px auto 0;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .btn-continuar:hover {
+      background-color: #0056b3;
+    }
+    .btn-pagar {
+      display: block;
+      margin: 20px auto 0;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .btn-pagar:hover {
+      background-color: #218838;
+    }
+    .mensaje-vacio {
+      text-align: center;
+      font-size: 1.3rem;
+      color: #666;
+      margin-top: 80px;
+    }
+    .editar-cantidad-form {
+      margin-top: 10px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .editar-cantidad-form input[type="number"] {
+      width: 70px;
+      padding: 4px 6px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .editar-cantidad-form button {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+    }
+    .btn-editar-cantidad {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: #007bff;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .btn-editar-cantidad:hover {
+      text-decoration: underline;
+    }
+    #map-section {
+      margin-bottom: 30px;
+    }
+    #map {
+      width: 100%;
+      height: 300px;
+      margin-top: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Botón para volver a la vista de tiendas -->
+  <button class="volver-btn" onclick="window.location.href='/cliente'" aria-label="Volver a tiendas">&#8592;</button>
+
+  <div class="carrito-container">
+    <% if (productos.length === 0) { %>
+      <!-- Mensaje si el carrito está vacío -->
+      <div class="mensaje-vacio">Tu carrito está vacío.</div>
+    <% } else { %>
+      <% productos.forEach(function(producto) { %>
+        <!-- Muestra cada producto del carrito como una tarjeta -->
+        <div class="producto-card" data-id="<%= producto._id %>" data-tienda-id="<%= producto.tiendaId %>">
+          <img src="<%= producto.imagen %>" alt="<%= producto.nombre %>" />
+          <div class="producto-info">
+            <div class="producto-nombre"><%= producto.nombre %></div>
+            <div class="producto-cantidad">Cantidad: <span class="cantidad-text"><%= producto.cantidad %></span></div>
+            <div class="precio-container">
+              <span class="producto-precio">Precio por unidad: <%= producto.precio.toFixed(2) %> €</span>
+              <span class="precio-total">Precio total: <%= (producto.precio * producto.cantidad).toFixed(2) %> €</span>
+            </div>
+            <!-- Botón para mostrar el formulario de edición de cantidad -->
+            <button class="btn-editar-cantidad">Editar cantidad</button>
+            <!-- Formulario para editar la cantidad del producto -->
+            <form class="editar-cantidad-form" style="display:none;">
+              <input type="number" min="1" value="<%= producto.cantidad %>" required />
+              <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+              <button type="button" class="btn btn-sm btn-secondary btn-cancelar">Cancelar</button>
+            </form>
+          </div>
+          <!-- Botón para eliminar el producto del carrito -->
+          <button class="btn-eliminar" aria-label="Eliminar producto" title="Eliminar producto">&times;</button>
+        </div>
+      <% }); %>
+
+      <!-- Leaflet/OpenStreetMap debajo de los productos -->
+      <div id="map-section">
+        <label for="direccionEnvio"><b>Dirección de envío:</b></label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="text" id="direccionEnvio" placeholder="Introduce tu dirección" style="flex:1;padding:6px 8px;border-radius:4px;border:1px solid #ccc;">
+          <button type="button" id="buscarDireccion" title="Buscar en el mapa" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+        <div id="map"></div>
+      </div>
+
+      <!-- Pasarela de pago Stripe debajo del mapa -->
+      <form action="/cliente/pago" method="POST" id="formPago">
+        <input type="hidden" name="direccion" id="direccionSeleccionada">
+        <button type="submit" class="btn-pagar">Pagar con tarjeta</button>
+      </form>
+      <div id="direccionToast" style="
+        display:none;
+        position:fixed;
+        top:30px;
+        left:50%;
+        transform:translateX(-50%);
+        background:#f44336;
+        color:#fff;
+        padding:14px 32px;
+        border-radius:6px;
+        box-shadow:0 2px 8px rgba(0,0,0,0.15);
+        z-index:9999;
+        font-weight:bold;
+        font-size:1.1em;
+      "></div>
+    <% } %>
+  </div>
+
+   <!-- Validación de dirección antes de pagar -->
+  <script>
+  document.getElementById('formPago').addEventListener('submit', function(e) {
+    var direccion = document.getElementById('direccionSeleccionada').value.trim();
+    if (!direccion) {
+      e.preventDefault();
+      var toast = document.getElementById('direccionToast');
+      toast.textContent = 'Debes añadir dirección de envío para poder pagar';
+      toast.style.display = 'block';
+      toast.style.opacity = '1';
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        setTimeout(function() { toast.style.display = 'none'; }, 300);
+      }, 2500);
+      return false;
+    }
+  });
+  </script>
+   <!-- Leaflet para el mapa interactivo -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    let map, marker;
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicializar el mapa centrado en Madrid
+      map = L.map('map').setView([40.4168, -3.7038], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+      marker = L.marker([40.4168, -3.7038], {draggable:true}).addTo(map);
+
+      // Buscar dirección
+      function buscarDireccionEnMapa() {
+        const direccion = document.getElementById('direccionEnvio').value;
+        if (!direccion) {
+          alert('Introduce una dirección');
+          return;
+        }
+        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(direccion)}&format=json&addressdetails=1&limit=1`)
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+            map.setView([lat, lon], 15);
+            marker.setLatLng([lat, lon]);
+          } else {
+            alert('No se pudo encontrar la dirección.');
+          }
+        });
+      }
+
+      // Buscar al hacer clic en el botón de la lupa
+      document.getElementById('buscarDireccion').addEventListener('click', buscarDireccionEnMapa);
+
+      // Buscar al pulsar Enter
+      document.getElementById('direccionEnvio').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          buscarDireccionEnMapa();
+        }
+      });
+
+      // Guardar dirección seleccionada antes de pagar
+      document.getElementById('formPago').addEventListener('submit', function() {
+        document.getElementById('direccionSeleccionada').value = document.getElementById('direccionEnvio').value;
+      });
+
+      // Eliminar producto
+      document.querySelectorAll('.btn-eliminar').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const card = btn.closest('.producto-card');
+          const productoId = card.getAttribute('data-id');
+          if (confirm('¿Quieres eliminar este producto del carrito?')) {
+            fetch('/cliente/carrito/eliminar', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productoId })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                card.remove();
+                if (document.querySelectorAll('.producto-card').length === 0) {
+                  document.querySelector('.carrito-container').innerHTML = '<div class="mensaje-vacio">Tu carrito está vacío.</div>';
+                }
+              } else {
+                alert('Error al eliminar el producto del carrito');
+              }
+            });
+          }
+        });
+      });
+
+      // Mostrar formulario editar cantidad
+      document.querySelectorAll('.btn-editar-cantidad').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const card = btn.closest('.producto-card');
+          card.querySelector('.editar-cantidad-form').style.display = 'flex';
+          btn.style.display = 'none';
+        });
+      });
+
+      // Cancelar edición cantidad
+      document.querySelectorAll('.btn-cancelar').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const form = btn.closest('.editar-cantidad-form');
+          const card = form.closest('.producto-card');
+          form.style.display = 'none';
+          card.querySelector('.btn-editar-cantidad').style.display = '';
+        });
+      });
+
+      // Guardar nueva cantidad
+      document.querySelectorAll('.editar-cantidad-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const card = form.closest('.producto-card');
+          const productoId = card.getAttribute('data-id');
+          const tiendaId = card.getAttribute('data-tienda-id');
+          const nuevaCantidad = parseInt(form.querySelector('input[type="number"]').value);
+
+          if (isNaN(nuevaCantidad) || nuevaCantidad < 1) {
+            alert('Por favor, ingresa una cantidad válida (mínimo 1).');
+            return;
+          }
+
+          fetch('/cliente/carrito/agregar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productoId: productoId, cantidad: nuevaCantidad, reemplazar: true, tiendaId: tiendaId })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              card.querySelector('.cantidad-text').textContent = nuevaCantidad;
+              const precioUnidad = parseFloat(card.querySelector('.producto-precio').textContent.replace(/[^\d.,]/g, '').replace(',', '.'));
+              const precioTotal = (precioUnidad * nuevaCantidad).toFixed(2);
+              card.querySelector('.precio-total').textContent = 'Precio total: ' + precioTotal + ' €';
+              form.style.display = 'none';
+              card.querySelector('.btn-editar-cantidad').style.display = '';
+            } else {
+              alert(data.error || 'Error al actualizar la cantidad');
+            }
+          });
+        });
+      });
+    });
+  </script>
+</body>
+</html>

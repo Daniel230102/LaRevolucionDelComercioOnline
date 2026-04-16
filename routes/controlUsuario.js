@@ -1,0 +1,157 @@
+const express = require('express');
+const router = express.Router();
+const Usuario = require('../models/usuario');
+const rateLimit = require('express-rate-limit');
+const logger = require('../config/logger');
+
+// Rate limiting para login (prevenir fuerza bruta)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // máximo 5 intentos
+  message: 'Demasiados intentos de login, por favor inténtelo de nuevo más tarde',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Página login
+router.get('/', (req, res) => {
+  res.render('autenticacion', { rol: null, error: null, mostrarModalRoles: false, roles: [] });
+});
+
+// Página registro
+router.get('/registro', (req, res) => {
+  res.render('registro', { error: null, valores: {} });
+});
+
+// POST iniciar sesión con soporte para múltiples roles
+router.post('/iniciar-sesion', loginLimiter, async (req, res, next) => {
+  try {
+    const { email, contraseña } = req.body;
+    const usuario = await Usuario.findOne({ email });
+
+    // Verifica credenciales
+    if (usuario && usuario.compararContraseña(contraseña)) {
+      const roles = usuario.rol ? usuario.rol.split(',').map(r => r.trim()) : ['cliente'];
+
+      // Guarda sesión
+      req.session.userId = usuario._id;
+      req.session.roles = roles;
+
+      // Si tiene múltiples roles, muestra modal de selección
+      if (roles.length === 1) {
+        req.session.rol = roles[0];
+        return redirigirSegunRol(res, roles[0]);
+      } else {
+        return res.render('autenticacion', {
+          rol: null,
+          error: null,
+          mostrarModalRoles: true, // Activa el modal
+          roles: roles
+        });
+      }
+    } else {
+      return res.render('autenticacion', {
+        error: 'Credenciales inválidas',
+        rol: null,
+        mostrarModalRoles: false,
+        roles: []
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST seleccionar rol tras login con múltiples roles
+router.post('/seleccionar-rol', (req, res) => {
+  const { rol } = req.body;
+
+  // Verifica que el rol sea válido para el usuario
+  if (!req.session.roles || !req.session.roles.includes(rol)) {
+    return res.redirect('/');
+  }
+
+  req.session.rol = rol;
+  return redirigirSegunRol(res, rol);
+});
+
+// Función auxiliar para redirigir según rol
+function redirigirSegunRol(res, rol) {
+  switch (rol) {
+    case 'propietario':
+      return res.redirect('/propietario');
+    case 'gerente':
+      return res.redirect('/gerente');
+    default:
+      return res.redirect('/cliente');
+  }
+}
+
+// POST registro
+router.post('/registrar', async (req, res, next) => {
+  try {
+    const { email, contraseña, rol, codigo } = req.body;
+
+    // Validación de campos obligatorios
+    if (!email || !contraseña || !rol) {
+      return res.render('registro', {
+        error: 'Todos los campos son obligatorios',
+        valores: { email, rol, codigo: '' }
+      });
+    }
+
+    // Validación de códigos para roles especiales
+    if (['gerente', 'propietario'].includes(rol)) {
+      if (!codigo) {
+        return res.render('registro', {
+          error: 'Código obligatorio para este rol',
+          valores: { email, rol, codigo: '' }
+        });
+      }
+      if (codigo !== '1') { // Código hardcodeado
+        return res.render('registro', {
+          error: 'Código erróneo',
+          valores: { email, rol, codigo }
+        });
+      }
+    } else if (rol === 'cliente' && codigo) {
+      return res.render('registro', {
+        error: 'No debes rellenar el código para registrarte como cliente',
+        valores: { email, rol, codigo: '' }
+      });
+    }
+
+    // Verifica si el email ya existe
+    const usuarioExistente = await Usuario.findOne({ email });
+    if (usuarioExistente) {
+      return res.render('registro', {
+        error: 'El email ya está registrado',
+        valores: { email, rol, codigo }
+      });
+    }
+
+    // Crea y guarda el nuevo usuario
+    const nuevoUsuario = new Usuario({
+      email,
+      contraseña,
+      rol
+    });
+
+    await nuevoUsuario.save();
+    res.redirect('/');
+  } catch (error) {
+    res.render('registro', {
+      error: 'Error en el registro: ' + error.message,
+      valores: req.body
+    });
+  }
+});
+
+// GET cerrar sesión
+router.get('/cerrar-sesion', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/');
+  });
+});
+
+module.exports = router;

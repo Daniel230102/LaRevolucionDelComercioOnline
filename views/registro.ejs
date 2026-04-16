@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro</title>
+  <!-- Tailwind CSS para estilos rápidos y responsivos -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    /* Fondo con imagen y estilos para el recuadro de registro */
+    body {
+      background-image: url('/images/imagen-fondo.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: center center;
+    }
+    .header-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .volver-btn {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      color: #222;
+      cursor: pointer;
+      transition: color 0.2s;
+      padding: 0;
+      margin-right: 1rem;
+      line-height: 1;
+    }
+    .volver-btn:hover, .volver-btn:focus {
+      color: #007bff;
+      outline: none;
+    }
+    .titulo-registro {
+      flex-grow: 1;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <!-- Recuadro de registro centrado -->
+  <div class="bg-white p-8 rounded-lg shadow-md w-96">
+    <!-- Cabecera con flecha para volver y título -->
+    <div class="header-container">
+      <!-- Botón para volver a la pantalla de autenticación -->
+      <button class="volver-btn" onclick="window.location.href='/autenticacion'" aria-label="Volver a inicio de sesión">
+        &#8592;
+      </button>
+      <h1 class="titulo-registro">Registrarse</h1>
+    </div>
+
+    <!-- Mensaje de error si el registro falla -->
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="mb-4 text-red-600 font-semibold text-center"><%= error %></div>
+    <% } %>
+
+    <!-- Formulario de registro -->
+    <form id="registroForm" action="/registrar" method="POST" class="space-y-4" novalidate>
+      <!-- Campo de email -->
+      <div>
+        <label for="email" class="block text-gray-700 mb-2">Correo electrónico</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          value="<%= valores && valores.email ? valores.email : '' %>"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+          placeholder="ejemplo@correo.com"
+        />
+      </div>
+
+      <!-- Campo de contraseña -->
+      <div>
+        <label for="contraseña" class="block text-gray-700 mb-2">Contraseña</label>
+        <input
+          type="password"
+          id="contraseña"
+          name="contraseña"
+          required
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+          placeholder="********"
+        />
+      </div>
+
+      <!-- Campo de código de seguridad, solo visible para gerente/propietario -->
+      <div id="codigoDiv" style="display:none;">
+        <label for="codigo" class="block text-gray-700 mb-2">Código</label>
+        <input
+          type="password"
+          id="codigo"
+          name="codigo"
+          value="<%= valores && valores.codigo ? valores.codigo : '' %>"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+          placeholder="Código de seguridad"
+          autocomplete="off"
+        />
+        <p id="codigoError" class="text-red-600 text-sm mt-1"></p>
+      </div>
+
+      <!-- Selector de rol para el usuario -->
+      <div>
+        <label for="rol" class="block text-gray-700 mb-2">Rol</label>
+        <select
+          id="rol"
+          name="rol"
+          required
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+        >
+          <option value="cliente" <%= valores && valores.rol === 'cliente' ? 'selected' : '' %>>Cliente</option>
+          <option value="gerente" <%= valores && valores.rol === 'gerente' ? 'selected' : '' %>>Gerente</option>
+          <option value="propietario" <%= valores && valores.rol === 'propietario' ? 'selected' : '' %>>Propietario</option>
+        </select>
+      </div>
+
+      <!-- Botón para enviar el formulario -->
+      <button
+        type="submit"
+        class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors"
+      >
+        Registrarse
+      </button>
+    </form>
+  </div>
+
+  <!-- Script para mostrar/ocultar el campo código y validar el formulario -->
+  <script>
+    // Muestra u oculta el campo de código según el rol seleccionado
+    function onRolChange() {
+      const rol = document.getElementById('rol').value;
+      const codigoDiv = document.getElementById('codigoDiv');
+      const codigoInput = document.getElementById('codigo');
+      const codigoError = document.getElementById('codigoError');
+
+      if (rol === 'cliente') {
+        codigoDiv.style.display = 'none';
+        codigoInput.value = '';
+        codigoError.textContent = '';
+      } else {
+        codigoDiv.style.display = 'block';
+      }
+    }
+
+    // Validación del formulario antes de enviarlo
+    function validateForm(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('email');
+      const contraseña = document.getElementById('contraseña');
+      const rol = document.getElementById('rol').value;
+      const codigo = document.getElementById('codigo');
+      const codigoError = document.getElementById('codigoError');
+
+      let valid = true;
+
+      // Quitar estilos de error previos
+      email.classList.remove('border-red-500');
+      contraseña.classList.remove('border-red-500');
+      codigo.classList.remove('border-red-500');
+      codigoError.textContent = '';
+
+      // Validación de email y contraseña obligatorios
+      if (!email.value.trim()) {
+        email.classList.add('border-red-500');
+        valid = false;
+      }
+      if (!contraseña.value.trim()) {
+        contraseña.classList.add('border-red-500');
+        valid = false;
+      }
+
+      // Validación del campo código según el rol
+      if (rol === 'cliente') {
+        if (codigo.value.trim() !== '') {
+          codigoError.textContent = 'No debes rellenar el código para registrarte como cliente.';
+          codigo.classList.add('border-red-500');
+          valid = false;
+        }
+      } else {
+        if (!codigo.value.trim()) {
+          codigoError.textContent = 'Debes rellenar el código para registrarte como gerente o propietario.';
+          codigo.classList.add('border-red-500');
+          valid = false;
+        } else if (codigo.value !== '1') {
+          codigoError.textContent = 'Código erróneo.';
+          codigo.classList.add('border-red-500');
+          valid = false;
+        }
+      }
+
+      // Si todo es válido, envía el formulario
+      if (valid) {
+        event.target.submit();
+      }
+    }
+
+    // Inicialización de eventos al cargar la página
+    window.addEventListener('DOMContentLoaded', () => {
+      onRolChange(); // Ajusta el campo código al cargar la vista
+      document.getElementById('registroForm').addEventListener('submit', validateForm);
+      document.getElementById('rol').addEventListener('change', onRolChange);
+    });
+  </script>
+</body>
+</html>
