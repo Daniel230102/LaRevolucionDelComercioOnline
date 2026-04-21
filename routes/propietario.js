@@ -4,6 +4,7 @@ const Tienda = require('../models/tienda');
 const Usuario = require('../models/usuario');
 const multer = require('multer');
 const path = require('path');
+const logger = require('../config/logger');
 
 // Middleware de autenticación para propietario
 function isAuthenticated(req, res, next) {
@@ -75,9 +76,10 @@ router.post('/modificar-tienda', isAuthenticated, upload.single('imagen'), async
 });
 
 // Eliminar tienda
-router.get('/eliminar-tienda/:id', isAuthenticated, async (req, res, next) => {
+router.post('/eliminar-tienda/:id', isAuthenticated, async (req, res, next) => {
   try {
     await Tienda.findByIdAndDelete(req.params.id);
+    // Opcional: eliminar productos y stock asociados a la tienda
     res.redirect('/propietario');
   } catch (error) {
     next(error);
@@ -104,8 +106,12 @@ router.get('/gestion-usuarios', isAuthenticated, async (req, res, next) => {
 });
 
 // Eliminar usuario
-router.get('/eliminar-usuario/:id', isAuthenticated, async (req, res, next) => {
+router.post('/eliminar-usuario/:id', isAuthenticated, async (req, res, next) => {
   try {
+    // No permitir que el propietario se elimine a sí mismo
+    if (req.params.id === req.session.userId) {
+      return res.redirect('/propietario/gestion-usuarios?error=No puedes eliminarte a ti mismo');
+    }
     await Usuario.findByIdAndDelete(req.params.id);
     res.redirect('/propietario/gestion-usuarios');
   } catch (error) {
@@ -133,7 +139,7 @@ router.post('/actualizar-rol', isAuthenticated, async (req, res, next) => {
     }
 
     // Prepara los datos a actualizar
-    const updateData = { rol: rolesFiltrados.join(',') };
+    const updateData = { rol: rolesFiltrados };
 
     // Si es gerente, requiere tiendaId
     if (rolesFiltrados.includes('gerente')) {
@@ -153,6 +159,49 @@ router.post('/actualizar-rol', isAuthenticated, async (req, res, next) => {
   } catch (error) {
     console.error('Error al actualizar roles:', error);
     res.redirect('/propietario/gestion-usuarios?error=Error al actualizar los roles');
+  }
+});
+
+// Registrar nuevo usuario (propietario o gerente)
+router.post('/registrar-usuario', isAuthenticated, async (req, res, next) => {
+  try {
+    const { email, contraseña, rol, tiendaId } = req.body;
+
+    // Validación de campos obligatorios
+    if (!email || !contraseña || !rol) {
+      return res.redirect('/propietario/gestion-usuarios?error=Todos los campos son obligatorios');
+    }
+
+    // Solo permite registrar como gerente o propietario
+    if (!['gerente', 'propietario'].includes(rol)) {
+      return res.redirect('/propietario/gestion-usuarios?error=Solo se puede registrar como gerente o propietario');
+    }
+
+    // Verifica si el email ya existe
+    const usuarioExistente = await Usuario.findOne({ email });
+    if (usuarioExistente) {
+      return res.redirect('/propietario/gestion-usuarios?error=El email ya está registrado');
+    }
+
+    // Si es gerente, requiere tienda asignada
+    if (rol === 'gerente' && !tiendaId) {
+      return res.redirect('/propietario/gestion-usuarios?error=Debes asignar una tienda al gerente');
+    }
+
+    // Crea y guarda el nuevo usuario
+    const nuevoUsuario = new Usuario({
+      email,
+      contraseña,
+      rol: [rol],
+      tiendaId: rol === 'gerente' ? tiendaId : null
+    });
+
+    await nuevoUsuario.save();
+    logger.info(`Nuevo usuario ${rol} registrado por propietario: ${email}`);
+    res.redirect('/propietario/gestion-usuarios');
+  } catch (error) {
+    console.error('Error al registrar usuario:', error);
+    res.redirect('/propietario/gestion-usuarios?error=Error al registrar el usuario: ' + error.message);
   }
 });
 

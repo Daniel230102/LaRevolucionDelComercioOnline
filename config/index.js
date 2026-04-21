@@ -37,7 +37,6 @@ const config = {
   
   // Seguridad
   security: {
-    accessCode: process.env.ACCESS_CODE || '1',
     bcryptRounds: process.env.NODE_ENV === 'production' ? 12 : 10
   },
   

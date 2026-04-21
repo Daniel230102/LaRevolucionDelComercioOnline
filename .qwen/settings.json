@@ -5,7 +5,8 @@
       "Bash(mkdir *)",
       "Bash(node *)",
       "Bash(findstr *)",
-      "Bash(del *)"
+      "Bash(del *)",
+      "Bash(git add *)"
     ]
   },
   "$version": 3

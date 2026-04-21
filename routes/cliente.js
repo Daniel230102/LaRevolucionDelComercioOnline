@@ -172,8 +172,13 @@ router.post('/pago', isAuthenticated, async (req, res, next) => {
 
 // Limpiar carrito y descontar stock tras el pago
 router.get('/pago-exitoso', isAuthenticated, async (req, res) => {
-  // Recupera el carrito del usuario desde la sesión y si no existe, lo inicializa como un array vacío
+  // Recupera el carrito del usuario desde la sesión
   const carrito = req.session.carrito || [];
+  
+  // Si el carrito está vacío, probablemente sea un acceso directo o recarga de página
+  if (carrito.length === 0) {
+    return res.redirect('/cliente');
+  }
   
   logger.info(`Pago exitoso para usuario ${req.session.userId}, procesando ${carrito.length} productos`);
   

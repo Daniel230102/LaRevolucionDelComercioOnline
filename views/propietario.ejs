@@ -99,7 +99,7 @@
     <!-- Sección de gestión de usuarios -->
     <% } else if (section === 'usuarios') { %>
         <h1 class="text-center mb-4">Gestión de Usuarios</h1>
-        
+
         <% if (typeof error !== 'undefined' && error) { %>
             <!-- Muestra mensaje de error si existe -->
             <div class="alert alert-danger text-center mb-4">
@@ -107,6 +107,13 @@
                 <%= error %>
             </div>
         <% } %>
+
+        <!-- Botón para registrar nuevo usuario -->
+        <div class="mb-3">
+            <button class="btn btn-success px-4" data-toggle="modal" data-target="#registrarUsuarioModal">
+                <i class="fas fa-user-plus mr-2"></i>Registrar Nuevo Usuario
+            </button>
+        </div>
 
         <!-- Tabla de usuarios -->
         <table class="table">
@@ -123,8 +130,10 @@
                     <tr>
                         <td><%= usuario.email %></td>
                         <td>
-                            <% if (usuario.rol) { %>
-                                <%= usuario.rol.split(',').map(r => r.trim()).join(', ') %>
+                            <% if (usuario.rol && Array.isArray(usuario.rol)) { %>
+                                <%= usuario.rol.join(', ') %>
+                            <% } else if (usuario.rol) { %>
+                                <%= usuario.rol %>
                             <% } else { %>
                                 Sin rol asignado
                             <% } %>
@@ -139,7 +148,7 @@
                         <td class="d-flex gap-3 align-items-center">
                             <!-- Botón para abrir el modal de roles -->
                             <button
-                                onclick="abrirModalRoles('<%= usuario._id %>', '<%= usuario.rol %>', '<%= usuario.tiendaId ? usuario.tiendaId._id : "" %>')"
+                                onclick="abrirModalRoles('<%= usuario._id %>', <%= JSON.stringify(usuario.rol) %>, '<%= usuario.tiendaId ? usuario.tiendaId._id : "" %>')"
                                 class="btn btn-primary btn-lg-custom">
                                 <i class="fas fa-edit mr-2"></i>Modificar Roles
                             </button>
@@ -268,6 +277,63 @@
     </div>
 </div>
 
+<!-- Modal para registrar nuevo usuario -->
+<div class="modal fade" id="registrarUsuarioModal" tabindex="-1" role="dialog" aria-labelledby="registrarUsuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registrarUsuarioModalLabel">Registrar Nuevo Usuario</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario para registrar nuevo usuario -->
+                <form id="registrarUsuarioForm" action="/propietario/registrar-usuario" method="POST" novalidate>
+                    <div class="form-group">
+                        <label for="nuevoEmail">Correo electrónico</label>
+                        <input type="email" class="form-control" id="nuevoEmail" name="email" required>
+                        <div class="invalid-feedback">Por favor, ingresa un email válido.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="nuevaContraseña">Contraseña</label>
+                        <input type="password" class="form-control" id="nuevaContraseña" name="contraseña" required minlength="6">
+                        <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="nuevoRol">Rol</label>
+                        <select class="form-control" id="nuevoRol" name="rol" required onchange="toggleTiendaSelector()">
+                            <option value="">-- Selecciona un rol --</option>
+                            <option value="gerente">Gerente</option>
+                            <option value="propietario">Propietario</option>
+                        </select>
+                        <div class="invalid-feedback">Debes seleccionar un rol.</div>
+                    </div>
+
+                    <!-- Selector de tienda (solo visible para gerente) -->
+                    <div class="form-group mt-3" id="nuevaTiendaSelectorGroup" style="display: none;">
+                        <label for="nuevaTiendaSelect" class="form-label"><strong>Tienda asignada:</strong></label>
+                        <select class="form-control" id="nuevaTiendaSelect" name="tiendaId">
+                            <option value="">-- Selecciona una tienda --</option>
+                            <% tiendas.forEach(function(tienda) { %>
+                                <option value="<%= tienda._id %>"><%= tienda.nombre %></option>
+                            <% }); %>
+                        </select>
+                        <small class="form-text text-muted">Un gerente debe tener exactamente una tienda asignada.</small>
+                        <div class="invalid-feedback">Debes asignar una tienda al gerente.</div>
+                    </div>
+
+                    <div id="registroErrorContainer"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Registrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // --- Selección de tienda y botones de modificar/eliminar ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -321,10 +387,9 @@ function abrirModalRoles(userId, rolActual, tiendaActualId) {
 
     document.getElementById('rolesErrorContainer').innerHTML = '';
 
-    // Marca los roles actuales del usuario
-    if (rolActual) {
-        const roles = rolActual.split(',').map(r => r.trim());
-        roles.forEach(rol => {
+    // Marca los roles actuales del usuario (rolActual ahora es un array)
+    if (rolActual && Array.isArray(rolActual)) {
+        rolActual.forEach(rol => {
             const checkbox = document.querySelector(`#formRoles input[value="${rol}"]`);
             if (checkbox) checkbox.checked = true;
         });
@@ -332,7 +397,7 @@ function abrirModalRoles(userId, rolActual, tiendaActualId) {
 
     // Actualiza la visibilidad del selector de tienda
     actualizarSelectorTienda();
-    
+
     // Si hay tienda asignada, selecciónala
     if (tiendaActualId) {
         document.getElementById('tiendaSelect').value = tiendaActualId;
@@ -401,6 +466,22 @@ document.getElementById('formRoles').addEventListener('submit', function(e) {
 function eliminarUsuario(userId) {
     if (confirm('¿Eliminar este usuario?')) {
         window.location.href = `/propietario/eliminar-usuario/${userId}`;
+    }
+}
+
+// Función para mostrar/ocultar el selector de tienda al registrar usuario
+function toggleTiendaSelector() {
+    const rol = document.getElementById('nuevoRol').value;
+    const tiendaSelector = document.getElementById('nuevaTiendaSelectorGroup');
+    const tiendaSelect = document.getElementById('nuevaTiendaSelect');
+
+    if (rol === 'gerente') {
+        tiendaSelector.style.display = 'block';
+        tiendaSelect.required = true;
+    } else {
+        tiendaSelector.style.display = 'none';
+        tiendaSelect.required = false;
+        tiendaSelect.value = '';
     }
 }
 </script>

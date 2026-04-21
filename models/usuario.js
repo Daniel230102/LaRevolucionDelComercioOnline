@@ -17,21 +17,20 @@ const usuarioSchema = new mongoose.Schema({
     minlength: [6, 'La contraseña debe tener al menos 6 caracteres']
   },
   rol: {
-    type: String,
+    type: [String],
     enum: ['cliente', 'gerente', 'propietario'],
-    default: 'cliente'
+    default: ['cliente']
   },
   tiendaId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tienda',
     required: function() {
-      return this.rol && this.rol.split(',').includes('gerente');
+      return this.rol && this.rol.includes('gerente');
     }
   }
 });
 
 // Índices para optimizar consultas
-usuarioSchema.index({ email: 1 });
 usuarioSchema.index({ rol: 1 });
 usuarioSchema.index({ tiendaId: 1 });
 

@@ -90,36 +90,6 @@
         />
       </div>
 
-      <!-- Campo de código de seguridad, solo visible para gerente/propietario -->
-      <div id="codigoDiv" style="display:none;">
-        <label for="codigo" class="block text-gray-700 mb-2">Código</label>
-        <input
-          type="password"
-          id="codigo"
-          name="codigo"
-          value="<%= valores && valores.codigo ? valores.codigo : '' %>"
-          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-          placeholder="Código de seguridad"
-          autocomplete="off"
-        />
-        <p id="codigoError" class="text-red-600 text-sm mt-1"></p>
-      </div>
-
-      <!-- Selector de rol para el usuario -->
-      <div>
-        <label for="rol" class="block text-gray-700 mb-2">Rol</label>
-        <select
-          id="rol"
-          name="rol"
-          required
-          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-        >
-          <option value="cliente" <%= valores && valores.rol === 'cliente' ? 'selected' : '' %>>Cliente</option>
-          <option value="gerente" <%= valores && valores.rol === 'gerente' ? 'selected' : '' %>>Gerente</option>
-          <option value="propietario" <%= valores && valores.rol === 'propietario' ? 'selected' : '' %>>Propietario</option>
-        </select>
-      </div>
-
       <!-- Botón para enviar el formulario -->
       <button
         type="submit"
@@ -130,41 +100,20 @@
     </form>
   </div>
 
-  <!-- Script para mostrar/ocultar el campo código y validar el formulario -->
+  <!-- Script para validar el formulario de registro -->
   <script>
-    // Muestra u oculta el campo de código según el rol seleccionado
-    function onRolChange() {
-      const rol = document.getElementById('rol').value;
-      const codigoDiv = document.getElementById('codigoDiv');
-      const codigoInput = document.getElementById('codigo');
-      const codigoError = document.getElementById('codigoError');
-
-      if (rol === 'cliente') {
-        codigoDiv.style.display = 'none';
-        codigoInput.value = '';
-        codigoError.textContent = '';
-      } else {
-        codigoDiv.style.display = 'block';
-      }
-    }
-
     // Validación del formulario antes de enviarlo
     function validateForm(event) {
       event.preventDefault();
 
       const email = document.getElementById('email');
       const contraseña = document.getElementById('contraseña');
-      const rol = document.getElementById('rol').value;
-      const codigo = document.getElementById('codigo');
-      const codigoError = document.getElementById('codigoError');
 
       let valid = true;
 
       // Quitar estilos de error previos
       email.classList.remove('border-red-500');
       contraseña.classList.remove('border-red-500');
-      codigo.classList.remove('border-red-500');
-      codigoError.textContent = '';
 
       // Validación de email y contraseña obligatorios
       if (!email.value.trim()) {
@@ -176,25 +125,6 @@
         valid = false;
       }
 
-      // Validación del campo código según el rol
-      if (rol === 'cliente') {
-        if (codigo.value.trim() !== '') {
-          codigoError.textContent = 'No debes rellenar el código para registrarte como cliente.';
-          codigo.classList.add('border-red-500');
-          valid = false;
-        }
-      } else {
-        if (!codigo.value.trim()) {
-          codigoError.textContent = 'Debes rellenar el código para registrarte como gerente o propietario.';
-          codigo.classList.add('border-red-500');
-          valid = false;
-        } else if (codigo.value !== '1') {
-          codigoError.textContent = 'Código erróneo.';
-          codigo.classList.add('border-red-500');
-          valid = false;
-        }
-      }
-
       // Si todo es válido, envía el formulario
       if (valid) {
         event.target.submit();
@@ -203,9 +133,7 @@
 
     // Inicialización de eventos al cargar la página
     window.addEventListener('DOMContentLoaded', () => {
-      onRolChange(); // Ajusta el campo código al cargar la vista
       document.getElementById('registroForm').addEventListener('submit', validateForm);
-      document.getElementById('rol').addEventListener('change', onRolChange);
     });
   </script>
 </body>

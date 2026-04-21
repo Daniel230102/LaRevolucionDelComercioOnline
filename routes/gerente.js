@@ -173,10 +173,21 @@ router.post('/agregar-producto', isAuthenticated, uploadProductos.single('imagen
 });
 
 //Eliminar productos
-router.get('/eliminar-producto/:id', isAuthenticated, async (req, res, next) => {
+router.post('/eliminar-producto/:id', isAuthenticated, async (req, res, next) => {
   try {
     const ProductoModel = require('../models/producto');
+    // Verificar que el producto pertenece a la tienda del gerente
+    const usuario = await Usuario.findById(req.session.userId);
+    const producto = await ProductoModel.findById(req.params.id);
+    
+    if (!producto || producto.tiendaId.toString() !== usuario.tiendaId.toString()) {
+      return res.redirect('/gerente/gestion-productos?error=No tienes permiso para eliminar este producto');
+    }
+
     await ProductoModel.findByIdAndDelete(req.params.id);
+    // También eliminar el stock asociado
+    await Stock.deleteMany({ producto: req.params.id });
+    
     res.redirect('/gerente/gestion-productos');
   } catch (error) {
     next(error);
@@ -233,17 +244,21 @@ router.post('/subir-trabajadores', isAuthenticated, uploadCSV.single('archivoCSV
         if (row.nombre && row.apellidos) {
           trabajadores.push({
             nombre: row.nombre,
-            apellidos: row.apellidos
+            apellidos: row.apellidos,
+            tiendaId: usuario.tiendaId._id // Asignar la tienda del gerente
           });
         }
       })
       .on('end', async () => {
-        // Elimina todos los trabajadores existentes y añade los nuevos
+        // Elimina solo los trabajadores de la tienda del gerente y añade los nuevos
         if (trabajadores.length) {
           try {
-            await Trabajador.deleteMany({});
+            await Trabajador.deleteMany({ tiendaId: usuario.tiendaId._id });
             await Trabajador.insertMany(trabajadores);
-          } catch (err) {}
+            logger.info(`Actualizados ${trabajadores.length} trabajadores para la tienda ${usuario.tiendaId.nombre}`);
+          } catch (err) {
+            logger.error('Error al actualizar trabajadores:', err);
+          }
         }
         res.redirect('/gerente/gestion-horarios');
       })

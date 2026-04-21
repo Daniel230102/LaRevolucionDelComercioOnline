@@ -3,6 +3,7 @@ const router = express.Router();
 const Usuario = require('../models/usuario');
 const rateLimit = require('express-rate-limit');
 const logger = require('../config/logger');
+const config = require('../config');
 
 // Rate limiting para login (prevenir fuerza bruta)
 const loginLimiter = rateLimit({
@@ -31,7 +32,7 @@ router.post('/iniciar-sesion', loginLimiter, async (req, res, next) => {
 
     // Verifica credenciales
     if (usuario && usuario.compararContraseña(contraseña)) {
-      const roles = usuario.rol ? usuario.rol.split(',').map(r => r.trim()) : ['cliente'];
+      const roles = Array.isArray(usuario.rol) ? usuario.rol : ['cliente'];
 
       // Guarda sesión
       req.session.userId = usuario._id;
@@ -87,37 +88,16 @@ function redirigirSegunRol(res, rol) {
   }
 }
 
-// POST registro
+// POST registro (solo permite clientes)
 router.post('/registrar', async (req, res, next) => {
   try {
-    const { email, contraseña, rol, codigo } = req.body;
+    const { email, contraseña } = req.body;
 
     // Validación de campos obligatorios
-    if (!email || !contraseña || !rol) {
+    if (!email || !contraseña) {
       return res.render('registro', {
         error: 'Todos los campos son obligatorios',
-        valores: { email, rol, codigo: '' }
-      });
-    }
-
-    // Validación de códigos para roles especiales
-    if (['gerente', 'propietario'].includes(rol)) {
-      if (!codigo) {
-        return res.render('registro', {
-          error: 'Código obligatorio para este rol',
-          valores: { email, rol, codigo: '' }
-        });
-      }
-      if (codigo !== '1') { // Código hardcodeado
-        return res.render('registro', {
-          error: 'Código erróneo',
-          valores: { email, rol, codigo }
-        });
-      }
-    } else if (rol === 'cliente' && codigo) {
-      return res.render('registro', {
-        error: 'No debes rellenar el código para registrarte como cliente',
-        valores: { email, rol, codigo: '' }
+        valores: { email }
       });
     }
 
@@ -126,20 +106,22 @@ router.post('/registrar', async (req, res, next) => {
     if (usuarioExistente) {
       return res.render('registro', {
         error: 'El email ya está registrado',
-        valores: { email, rol, codigo }
+        valores: { email }
       });
     }
 
-    // Crea y guarda el nuevo usuario
+    // Crea y guarda el nuevo usuario como cliente
     const nuevoUsuario = new Usuario({
       email,
       contraseña,
-      rol
+      rol: ['cliente']
     });
 
     await nuevoUsuario.save();
+    logger.info(`Nuevo usuario registrado: ${email}`);
     res.redirect('/');
   } catch (error) {
+    logger.error(`Error en registro: ${error.message}`);
     res.render('registro', {
       error: 'Error en el registro: ' + error.message,
       valores: req.body
